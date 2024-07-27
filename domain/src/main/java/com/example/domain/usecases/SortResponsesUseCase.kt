@@ -1,5 +1,6 @@
 package com.example.domain.usecases
 
+import com.example.data.dto.HttpResponseDto
 import com.example.data.repository.RequestRepository
 import com.example.domain.SortOption
 import com.example.domain.model.HttpResponse
@@ -9,17 +10,7 @@ class SortResponsesUseCase(private val repository: RequestRepository)
     fun execute(sortOption: SortOption?,onSort: (List<HttpResponse>) -> Unit) {
         repository.getResponses { responses ->
             val httpResponses = responses.map {
-                HttpResponse(
-                    requestUrl = it.requestUrl,
-                    responseCode = it.responseCode,
-                    error = it.error,
-                    headers = it.headers,
-                    body = it.body,
-                    params = it.params,
-                    requestTime = it.requestTime,
-                    requestSchema = it.requestSchema,
-                    requestMethod = it.requestMethod,
-                )
+                it.toDomainModel()
             }
             val result = when (sortOption) {
                 is SortOption.Ascending -> httpResponses.sortedBy { it.requestTime }
@@ -30,4 +21,16 @@ class SortResponsesUseCase(private val repository: RequestRepository)
             onSort.invoke(result)
         }
     }
+
+    private fun HttpResponseDto.toDomainModel() = HttpResponse(
+        requestUrl = requestUrl,
+        responseCode = responseCode,
+        error = error,
+        headers = headers,
+        body = body,
+        params = params,
+        requestTime = requestTime,
+        requestSchema = requestSchema,
+        requestMethod = requestMethod
+    )
 }
