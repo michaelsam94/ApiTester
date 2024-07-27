@@ -1,5 +1,7 @@
-package com.example.data
+package com.example.data.remote
 
+import com.example.data.HttpResult
+import com.example.data.HttpStatus
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -10,13 +12,13 @@ import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.Executors
 
-class ApiService {
-    fun makeRequest(
+class ApiServiceImp: ApiService {
+    override fun makeRequest(
         method: String,
         url: String,
         headers: Map<String, String>,
         parameters: Map<String, String>,
-        body: String? = null,
+        body: String?,
         onResponse: (HttpResult) -> Unit
     ) {
         Executors.newSingleThreadExecutor().execute {
@@ -60,10 +62,12 @@ class ApiService {
                     connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
                 }
                 elapsedTime = System.currentTimeMillis() - startTime // Calculate elapsed time
-                onResponse(HttpResult.Success(response,elapsedTime.toInt() ,responseCode)) // Pass elapsed time
+                onResponse(
+                    HttpResult.Success(response,
+                        HttpStatus.fromCode(responseCode)?.message ?: "" ,elapsedTime.toInt(), responseCode)) // Pass elapsed time
 
             } catch (e: FileNotFoundException) {
-                onResponse(HttpResult.Error("Resource not found",404))
+                onResponse(HttpResult.Error("Resource not found", 404))
             } catch (e: MalformedURLException) {
                 onResponse(HttpResult.Error("Invalid URL"))
             } catch (e: ProtocolException) {

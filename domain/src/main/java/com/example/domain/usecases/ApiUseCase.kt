@@ -1,6 +1,7 @@
 package com.example.domain.usecases
 
 import com.example.data.HttpResult
+import com.example.data.HttpStatus
 import com.example.data.repository.RequestRepository
 import com.example.domain.NetworkResult
 
@@ -20,9 +21,10 @@ class ApiUseCase(private val repository: RequestRepository) {
                     is HttpResult.Success -> {
                         onResponse.invoke(
                             NetworkResult.Success(
-                                httpResult.response,
-                                httpResult.requestTime,
-                                httpResult.responseCode
+                                response = httpResult.response,
+                                requestTime = httpResult.requestTime,
+                                responseCode = httpResult.responseCode,
+                                message = HttpStatus.fromCode(httpResult.responseCode)?.message ?: ""
                             )
                         )
                     }

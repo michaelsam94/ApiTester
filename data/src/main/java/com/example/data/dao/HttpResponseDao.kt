@@ -14,6 +14,8 @@ class HttpResponseDao(private val dbHelper: AppDatabase) {
         val values = ContentValues().apply {
             put(COLUMN_REQUEST_URL, httpResponse.requestUrl)
             put(COLUMN_RESPONSE_CODE, httpResponse.responseCode)
+            put(COLUMN_REQUEST_METHOD, httpResponse.requestMethod)
+            put(COLUMN_REQUEST_SCHEMA, httpResponse.requestSchema)
             put(COLUMN_ERROR, httpResponse.error)
             put(COLUMN_HEADERS, httpResponse.headers)
             put(COLUMN_BODY, httpResponse.body)
@@ -42,7 +44,9 @@ class HttpResponseDao(private val dbHelper: AppDatabase) {
                     val body = getString(getColumnIndexOrThrow(COLUMN_BODY))
                     val params = getString(getColumnIndexOrThrow(COLUMN_PARAMS))
                     val requestTime = getInt(getColumnIndexOrThrow(COLUMN_REQUEST_TIME))
-                    responses.add(HttpResponseEntity(requestUrl, responseCode, error, headers, body, params,requestTime))
+                    val requestMethod = getString(getColumnIndexOrThrow(COLUMN_REQUEST_METHOD))
+                    val requestSchema = getString(getColumnIndexOrThrow(COLUMN_REQUEST_SCHEMA))
+                    responses.add(HttpResponseEntity(requestUrl,requestMethod,requestSchema, responseCode, error, headers, body, params,requestTime))
                 }
             }
             onResponse.invoke(responses)
@@ -54,6 +58,8 @@ class HttpResponseDao(private val dbHelper: AppDatabase) {
     companion object {
         const val TABLE_NAME = "http_responses"
         const val COLUMN_REQUEST_URL = "request_url"
+        const val COLUMN_REQUEST_METHOD = "request_method"
+        const val COLUMN_REQUEST_SCHEMA = "request_schema"
         const val COLUMN_RESPONSE_CODE = "response_code"
         const val COLUMN_ERROR = "error"
         const val COLUMN_HEADERS = "headers"
@@ -68,6 +74,8 @@ class HttpResponseDao(private val dbHelper: AppDatabase) {
                 $COLUMN_ERROR TEXT,
                 $COLUMN_HEADERS TEXT,
                 $COLUMN_BODY TEXT,
+                $COLUMN_REQUEST_METHOD TEXT NOT NULL,
+                $COLUMN_REQUEST_SCHEMA TEXT NOT NULL,
                 $COLUMN_PARAMS TEXT,
                 $COLUMN_REQUEST_TIME INTEGER 
             )

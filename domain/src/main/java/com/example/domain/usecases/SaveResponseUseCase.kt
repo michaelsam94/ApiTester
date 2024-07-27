@@ -14,7 +14,9 @@ class SaveResponseUseCase(private val repository: RequestRepository) {
             headers = httpResponse.headers,
             body = httpResponse.body,
             params = httpResponse.params,
-            requestTime = httpResponse.requestTime
+            requestTime = httpResponse.requestTime,
+            requestMethod = httpResponse.requestMethod,
+            requestSchema = httpResponse.requestSchema,
         )
         repository.saveResponse(dto)
     }

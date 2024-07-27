@@ -16,7 +16,9 @@ class GetResponsesUseCase(private val repository: RequestRepository) {
                         headers = it.headers,
                         body = it.body,
                         params = it.params,
-                        requestTime = it.requestTime
+                        requestTime = it.requestTime,
+                        requestSchema = it.requestSchema,
+                        requestMethod = it.requestMethod,
                     )
                 }
                 onResponse.invoke(result)

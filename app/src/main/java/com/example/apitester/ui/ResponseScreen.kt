@@ -44,22 +44,26 @@ fun ResponseScreen(
     headers: String,
     body: String,
     params: String,
+    requestMethod: String,
+    requestSchema: String,
     requestTime: Int,
     responseViewModel: ResponseViewModel = viewModel(factory = ViewModelFactory())
 ) {
 
 
-    LaunchedEffect(key1 = requestUrl) {
-        // Set the values in the ViewModel
-        responseViewModel.setResponse(response)
-        responseViewModel.setRequestUrl(requestUrl)
-        responseViewModel.setResponseCode(responseCode)
-        responseViewModel.setError(error)
-        responseViewModel.setHeaders(headers)
-        responseViewModel.setBody(body)
-        responseViewModel.setParams(params)
-        responseViewModel.setRequestTime(requestTime)
+    // Set the values in the ViewModel
+    responseViewModel.setResponse(response)
+    responseViewModel.setRequestUrl(requestUrl)
+    responseViewModel.setResponseCode(responseCode)
+    responseViewModel.setError(error)
+    responseViewModel.setHeaders(headers)
+    responseViewModel.setBody(body)
+    responseViewModel.setRequestMethod(requestMethod)
+    responseViewModel.setRequestSchema(requestSchema)
+    responseViewModel.setParams(params)
+    responseViewModel.setRequestTime(requestTime)
 
+    LaunchedEffect(key1 = requestUrl) {
         responseViewModel.saveRequest()
     }
 
@@ -75,6 +79,7 @@ fun ResponseScreen(
     val bodyText by responseViewModel.body.observeAsState()
     val paramsText by responseViewModel.params.observeAsState()
     val requestTimeState by responseViewModel.requestTime.observeAsState()
+    val fullRequestUrl by responseViewModel.fullRequestUrl.observeAsState()
 
     Scaffold(
         topBar = {
@@ -111,9 +116,9 @@ fun ResponseScreen(
             if (showBottomSheet) {
                 ModalBottomSheet(onDismissRequest = { showBottomSheet = false }) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Request URL: ${requestUrlText ?: ""}")
+                        Text(text = "Request URL: ${fullRequestUrl ?: ""}")
                         Text(text = "Response Code: ${responseCodeText ?: ""}")
-                        Text(text = "Error: ${errorText ?: "None"}")
+                        Text(text = "Status: ${errorText ?: "None"}")
                         Text(text = "Request Headers: ${headersText ?: ""}")
                         Text(text = "Request Body: ${bodyText ?: ""}")
                         Text(text = "Query Parameters: ${paramsText ?: ""}")

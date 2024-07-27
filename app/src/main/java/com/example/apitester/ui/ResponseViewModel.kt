@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.example.apitester.di.ServiceLocator
 import com.example.apitester.utils.parseToMap
 import com.example.domain.model.HttpResponse
+import com.example.domain.model.getFullRequestUrl
 import com.example.domain.usecases.SaveResponseUseCase
 
 class ResponseViewModel(private val saveResponseUseCase: SaveResponseUseCase) : ViewModel() {
@@ -33,6 +34,15 @@ class ResponseViewModel(private val saveResponseUseCase: SaveResponseUseCase) : 
     private val _requestTime = MutableLiveData<Int>()
     val requestTime: LiveData<Int> get() = _requestTime
 
+    private val _requestSchema = MutableLiveData<String>()
+    val requestSchema: LiveData<String> get() = _requestSchema
+
+    private val _requestMethod = MutableLiveData<String>()
+    val requestMethod: LiveData<String> get() = _requestMethod
+
+    private val _fullRequestUrl = MutableLiveData<String>()
+    val fullRequestUrl: LiveData<String> get() = _requestUrl
+
     fun setResponse(response: String) {
         _response.value = response
     }
@@ -40,6 +50,8 @@ class ResponseViewModel(private val saveResponseUseCase: SaveResponseUseCase) : 
     fun setRequestUrl(url: String) {
         _requestUrl.value = url
     }
+
+
 
     fun setResponseCode(code: String) {
         _responseCode.value = code
@@ -57,6 +69,14 @@ class ResponseViewModel(private val saveResponseUseCase: SaveResponseUseCase) : 
         _body.value = body
     }
 
+    fun setRequestMethod(requestMethod: String) {
+        _requestMethod.value = requestMethod
+    }
+
+    fun setRequestSchema(requestSchema: String) {
+        _requestSchema.value= requestSchema
+    }
+
     fun setParams(params: String) {
         _params.value = params
     }
@@ -66,14 +86,18 @@ class ResponseViewModel(private val saveResponseUseCase: SaveResponseUseCase) : 
     }
 
     fun saveRequest(){
-        saveResponseUseCase.execute(HttpResponse(
+        val httpResponse = HttpResponse(
             responseCode = _responseCode.value?.toInt() ?: 0,
             headers = _headers.value?.parseToMap() ?: emptyMap(),
+            requestMethod = _requestMethod.value ?: "GET",
+            requestSchema = _requestSchema.value ?: "https://",
             requestUrl = _requestUrl.value ?: "",
             body = _body.value ?: "",
             error = _error.value ?: "",
             params = _params.value?.parseToMap() ?: emptyMap(),
             requestTime = _requestTime.value ?: 0
-        ))
+        )
+        saveResponseUseCase.execute(httpResponse)
+        _fullRequestUrl.value = httpResponse.getFullRequestUrl()
     }
 }

@@ -1,6 +1,6 @@
 package com.example.data.repository
 
-import com.example.data.ApiService
+import com.example.data.remote.ApiService
 import com.example.data.HttpResult
 import com.example.data.dao.HttpResponseDao
 import com.example.data.dto.HttpResponseDto
@@ -27,8 +27,10 @@ class RequestRepositoryImpl(private val apiService: ApiService, private val dao:
             error = httpResponse.error,
             headers = httpResponse.headers.toString(),
             body = httpResponse.body,
-            params = httpResponse.params.toString(),
-            requestTime = httpResponse.requestTime
+            params = httpResponse.params.entries.joinToString{ "${it.key}=${it.value}"},
+            requestTime = httpResponse.requestTime,
+            requestSchema = httpResponse.requestSchema,
+            requestMethod = httpResponse.requestMethod,
         )
         dao.insert(entity)
     }
@@ -45,15 +47,17 @@ class RequestRepositoryImpl(private val apiService: ApiService, private val dao:
                         key to value
                     } else emptyMap(),
                     body = it.body,
-                    params = if(it.params != "{}") {
-                        it.params.split(", ").associate {
-                            val (key, value) = it.split("=")
-                            key to value
+                    params = it.params.split("&").mapNotNull {
+                        val parts = it.split("=")
+                        if (parts.size == 2) {
+                            parts[0].trim() to parts[1].trim()
+                        } else {
+                            null
                         }
-                    } else {
-                      emptyMap()
-                    },
-                    requestTime = it.requestTime
+                    }.toMap(),
+                    requestTime = it.requestTime,
+                    requestSchema = it.requestSchema,
+                    requestMethod = it.requestMethod
                 )
             }
             onResponse.invoke(result)

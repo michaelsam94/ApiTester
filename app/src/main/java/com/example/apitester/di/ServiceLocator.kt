@@ -1,19 +1,22 @@
 package com.example.apitester.di
 
 import android.content.Context
-import com.example.data.ApiService
+import com.example.data.remote.ApiService
 import com.example.data.dao.HttpResponseDao
 import com.example.data.local.AppDatabase
+import com.example.data.remote.ApiServiceImp
 import com.example.data.repository.RequestRepository
 import com.example.data.repository.RequestRepositoryImpl
 import com.example.domain.usecases.ApiUseCase
+import com.example.domain.usecases.FilterResponsesUseCase
 import com.example.domain.usecases.GetResponsesUseCase
 import com.example.domain.usecases.SaveResponseUseCase
+import com.example.domain.usecases.SortResponsesUseCase
 
 
 object ServiceLocator {
 
-    private var apiService: ApiService = ApiService()
+    private var apiService: ApiService = ApiServiceImp()
 
     private var database: AppDatabase? = null
 
@@ -23,6 +26,8 @@ object ServiceLocator {
     private lateinit var apiUseCase: ApiUseCase
     private lateinit var saveResponseUseCase: SaveResponseUseCase
     private lateinit var getResponseUseCase: GetResponsesUseCase
+    private lateinit var filterResponsesUseCase: FilterResponsesUseCase
+    private lateinit var sortResponsesUseCase: SortResponsesUseCase
 
 
     fun initDB(context: Context) {
@@ -32,6 +37,8 @@ object ServiceLocator {
                 apiUseCase = ApiUseCase(requestRepository!!)
                 saveResponseUseCase = SaveResponseUseCase(requestRepository!!)
                 getResponseUseCase = GetResponsesUseCase(requestRepository!!)
+                filterResponsesUseCase = FilterResponsesUseCase(requestRepository!!)
+                sortResponsesUseCase = SortResponsesUseCase(requestRepository!!)
             }
 
         }
@@ -61,6 +68,14 @@ object ServiceLocator {
 
     fun getResponseUseCase(): GetResponsesUseCase {
         return getResponseUseCase
+    }
+
+    fun getFilterResponsesUseCase(): FilterResponsesUseCase {
+        return filterResponsesUseCase
+    }
+
+    fun getSortResponsesUseCase(): SortResponsesUseCase {
+        return sortResponsesUseCase
     }
 
 

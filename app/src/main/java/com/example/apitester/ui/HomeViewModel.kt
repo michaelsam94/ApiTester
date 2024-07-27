@@ -62,8 +62,11 @@ class HomeViewModel(private val apiUseCase: ApiUseCase) : ViewModel() {
         _headers.value?.add(header)
     }
 
-    fun removeHeader(index: Int) {
-        _headers.value?.removeAt(index)
+    fun removeLastHeader() {
+        if(_headers.value != null && _headers.value?.size!! > 0) {
+            _headers.value?.removeAt( _headers.value?.size!! - 1)
+        }
+
     }
 
     fun updateHeader(index: Int, header: Pair<String, String>) {
@@ -74,8 +77,11 @@ class HomeViewModel(private val apiUseCase: ApiUseCase) : ViewModel() {
         _parameters.value?.add(parameter)
     }
 
-    fun removeParameter(index: Int) {
-        _parameters.value?.removeAt(index)
+    fun removeLastParameter() {
+        if(_parameters.value != null && _parameters.value?.size!! > 0) {
+            _parameters.value?.removeAt(_parameters.value?.size!! - 1)
+        }
+
     }
 
     fun updateParameter(index: Int, parameter: Pair<String, String>) {
@@ -91,12 +97,9 @@ class HomeViewModel(private val apiUseCase: ApiUseCase) : ViewModel() {
         onResult: (NetworkResult) -> Unit // Add a callback for the result
     ) {
 
-
         val requestUrl = "${selectedSchema.value}$url"
         apiUseCase.execute(method, requestUrl, headers, parameters, body) { response ->
             onResult.invoke(response)
         }
-
-
     }
 }

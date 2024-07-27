@@ -33,13 +33,27 @@ fun String.isValidJson(): Boolean {
 }
 
 fun String.parseToMap(): Map<String, String> {
-    val regex = "\\(([^,]+),([^\\)]+)\\)".toRegex()
-    return regex.findAll(this)
-        .associate {
-            val (key, value) = it.destructured
-            key.trim() to value.trim()
+    return split("&").mapNotNull {
+        val parts = it.split("=")
+        if (parts.size == 2) {
+            parts[0].trim() to parts[1].trim()
+        } else {
+            null
         }
+    }.toMap()
 }
+
+fun String.toMap(): Map<String, String> {
+    return split("&").mapNotNull {
+        val parts = it.split("=")
+        if (parts.size == 2) {
+            parts[0].trim() to parts[1].trim()
+        } else {
+            null
+        }
+    }.toMap()
+}
+
 
 fun getRandomColor(): Color {
     return Color(Random.nextFloat(), Random.nextFloat(), Random.nextFloat())

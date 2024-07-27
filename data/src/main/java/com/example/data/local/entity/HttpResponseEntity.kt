@@ -2,6 +2,8 @@ package com.example.data.local.entity
 
 data class HttpResponseEntity(
     val requestUrl: String,
+    val requestMethod: String,
+    val requestSchema: String,
     val responseCode: Int,
     val error: String?,
     val headers: String,

@@ -53,8 +53,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.apitester.utils.HttpMethod
 import com.example.apitester.R
+import com.example.apitester.utils.HttpMethod
 import com.example.apitester.utils.isInternetAvailable
 import com.example.apitester.utils.isValidJson
 import com.example.apitester.utils.isValidUrl
@@ -65,16 +65,16 @@ import com.example.domain.NetworkResult
 fun HomeScreen(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    homeViewModel: HomeViewModel = viewModel(factory = ViewModelFactory())
+    viewModel: HomeViewModel = viewModel(factory = ViewModelFactory())
 ) {
-    val selectedMethod by homeViewModel.selectedMethod.observeAsState(HttpMethod.GET)
-    val selectedSchema by homeViewModel.selectedSchema.observeAsState("https://")
-    val url by homeViewModel.url.observeAsState("dummyjson.com/products/")
-    val body by homeViewModel.body.observeAsState("")
-    val isLoading by homeViewModel.isLoading.observeAsState(false)
-    val headersList = homeViewModel.headers.observeAsState(SnapshotStateList())
-    val paramsList = homeViewModel.parameters.observeAsState(SnapshotStateList())
-    val response = homeViewModel.response.observeAsState("")
+    val selectedMethod by viewModel.selectedMethod.observeAsState(HttpMethod.GET)
+    val selectedSchema by viewModel.selectedSchema.observeAsState("https://")
+    val url by viewModel.url.observeAsState("dummyjson.com/products/")
+    val body by viewModel.body.observeAsState("")
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val headersList = viewModel.headers.observeAsState(SnapshotStateList())
+    val paramsList = viewModel.parameters.observeAsState(SnapshotStateList())
+    val response = viewModel.response.observeAsState("")
 
     val context = LocalContext.current
     var sendEnabled by remember(url) {
@@ -93,7 +93,11 @@ fun HomeScreen(
                 IconButton(onClick = {
                     navController.navigate("history")
                 }) {
-                    Icon(painter = painterResource(id = R.drawable.ic_history), tint = Color.White, contentDescription = "history")
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_history),
+                        tint = Color.White,
+                        contentDescription = "history"
+                    )
                 }
             }
         )
@@ -129,7 +133,7 @@ fun HomeScreen(
                     ) {
                         Text(text = "Request Method")
                         RequestMethodDropDownMenu(selectedItem = selectedMethod) { selected ->
-                            homeViewModel.updateSelectedMethod(selected)
+                            viewModel.updateSelectedMethod(selected)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -141,12 +145,12 @@ fun HomeScreen(
                             .padding(bottom = 8.dp)
                     ) {
                         RequestSchemaDropDownMenu(selectedItem = selectedSchema) { selected ->
-                            homeViewModel.updateSelectedSchema(selected)
+                            viewModel.updateSelectedSchema(selected)
                         }
                         OutlinedTextField(
                             value = url,
                             onValueChange = { value ->
-                                homeViewModel.updateUrl(value)
+                                viewModel.updateUrl(value)
                                 sendEnabled = value.isValidUrl()
                             },
                             Modifier.fillMaxWidth(),
@@ -164,11 +168,19 @@ fun HomeScreen(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    RequestAdditionalHeaders(homeViewModel = homeViewModel,title = "Headers", headers = headersList.value)
+                    RequestAdditionalHeaders(
+                        homeViewModel = viewModel,
+                        title = "Headers",
+                        headers = headersList.value
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
-                    RequestAdditionalParams(homeViewModel = homeViewModel,title = "Parameters", params = paramsList.value)
+                    RequestAdditionalParams(
+                        homeViewModel = viewModel,
+                        title = "Parameters",
+                        params = paramsList.value
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
@@ -176,7 +188,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = body,
-                        onValueChange = { value -> homeViewModel.updateBody(value) },
+                        onValueChange = { value -> viewModel.updateBody(value) },
                         minLines = 5,
                         maxLines = 5,
                         modifier = Modifier.fillMaxWidth()
@@ -186,37 +198,57 @@ fun HomeScreen(
                     enabled = sendEnabled,
                     onClick = {
                         if (!isInternetAvailable(context)) {
-                            Toast.makeText(context, "Internet not connected", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Internet not connected", Toast.LENGTH_SHORT)
+                                .show()
                             return@Button
                         }
 
                         if (selectedMethod == HttpMethod.POST && !body.isValidJson()) {
-                            Toast.makeText(context, "JSON body not valid", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "JSON body not valid", Toast.LENGTH_SHORT)
+                                .show()
                             return@Button
                         }
 
-                        homeViewModel.setLoading(true)
-                        homeViewModel.makeRequest(selectedMethod.method, url, headersList.value.toMap(), paramsList.value.toMap(), body) { result ->
+                        viewModel.setLoading(true)
+                        viewModel.makeRequest(
+                            selectedMethod.method,
+                            url,
+                            headersList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
+                                .toMap(),
+                            paramsList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
+                                .toMap(),
+                            body
+                        ) { result ->
                             val mainHandler = Handler(Looper.getMainLooper())
                             mainHandler.post {
-                                homeViewModel.setLoading(false)
+                                viewModel.setLoading(false)
                                 when (result) {
                                     is NetworkResult.Success -> {
                                         val encodedParams = Uri.encode(paramsList.value
                                             .filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
-                                            .joinToString("&") { "${Uri.encode(it.first)}=${Uri.encode(it.second)}" }
+                                            .joinToString("&") {
+                                                "${Uri.encode(it.first)}=${
+                                                    Uri.encode(
+                                                        it.second
+                                                    )
+                                                }"
+                                            }
                                         )
                                         // Navigate to the response screen with the actual response
                                         navController.navigate(
                                             "response?response=${Uri.encode(result.response)}" +
                                                     "&requestUrl=${Uri.encode(url)}&responseCode=${result.responseCode}" +
-                                                    "&error=${Uri.encode("")}&headers=" +
-                                                    "${Uri.encode(headersList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
-                                                        .toString())}&body=${Uri.encode(body)}&params=$encodedParams" +
-                                                    "&requestTime=${result.requestTime}")
+                                                    "&error=${result.message}&headers=" +
+                                                    "${
+                                                        Uri.encode(headersList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
+                                                            .toString())
+                                                    }&body=${Uri.encode(body)}&params=$encodedParams" +
+                                                    "&requestTime=${result.requestTime}" + "&requestMethod=${selectedMethod}" + "&requestSchema=${selectedSchema}")
                                     }
+
                                     is NetworkResult.Error -> {
-                                        Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, result.message, Toast.LENGTH_SHORT)
+                                            .show()
                                     }
                                 }
                             }
@@ -235,7 +267,11 @@ fun HomeScreen(
 }
 
 @Composable
-fun RequestAdditionalHeaders(homeViewModel: HomeViewModel, title: String, headers: SnapshotStateList<Pair<String, String>>) {
+fun RequestAdditionalHeaders(
+    homeViewModel: HomeViewModel,
+    title: String,
+    headers: SnapshotStateList<Pair<String, String>>
+) {
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -247,7 +283,7 @@ fun RequestAdditionalHeaders(homeViewModel: HomeViewModel, title: String, header
             contentDescription = "remove header",
             modifier = Modifier
                 .clickable {
-                    if (headers.size > 0) headers.removeLast()
+                    if (headers.size > 0) homeViewModel.removeLastHeader()
                 }
                 .padding(4.dp)
                 .size(21.dp)
@@ -258,7 +294,7 @@ fun RequestAdditionalHeaders(homeViewModel: HomeViewModel, title: String, header
             contentDescription = "add header",
             modifier = Modifier
                 .clickable {
-                    headers.add(Pair("", ""))
+                    homeViewModel.addHeader(Pair("", ""))
                 }
                 .padding(4.dp)
                 .size(24.dp)
@@ -317,7 +353,11 @@ fun RequestAdditionalHeaders(homeViewModel: HomeViewModel, title: String, header
 }
 
 @Composable
-fun RequestAdditionalParams(homeViewModel: HomeViewModel, title: String, params: SnapshotStateList<Pair<String, String>>) {
+fun RequestAdditionalParams(
+    homeViewModel: HomeViewModel,
+    title: String,
+    params: SnapshotStateList<Pair<String, String>>
+) {
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -329,7 +369,9 @@ fun RequestAdditionalParams(homeViewModel: HomeViewModel, title: String, params:
             contentDescription = "remove header",
             modifier = Modifier
                 .clickable {
-                    if (params.size > 0) params.removeLast()
+                    if (params.size > 0) {
+                        homeViewModel.removeLastParameter()
+                    }
                 }
                 .padding(4.dp)
                 .size(21.dp)
@@ -340,7 +382,7 @@ fun RequestAdditionalParams(homeViewModel: HomeViewModel, title: String, params:
             contentDescription = "add header",
             modifier = Modifier
                 .clickable {
-                    params.add(Pair("", ""))
+                    homeViewModel.addParameter(Pair("", ""))
                 }
                 .padding(4.dp)
                 .size(24.dp)
