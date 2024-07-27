@@ -4,12 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.apitester.MainActivity
+import com.example.apitester.ui.home.HomeScreen
+import com.example.apitester.ui.home.HomeViewModel
 
 @Composable
-fun MainScreen() {
+fun MainScreen(activity: MainActivity? = null,homeViewModel: HomeViewModel) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "home") {
-        composable("home") { HomeScreen(navController) }
+        composable("home") { HomeScreen(navController, activity = activity, viewModel = homeViewModel) }
         composable("response?response={response}&requestUrl={requestUrl}&responseCode={responseCode}" +
                 "&error={error}&headers={headers}&body={body}&params={params}" +
                 "&requestTime={requestTime}&requestMethod={requestMethod}&requestSchema={requestSchema}") { backStackEntry ->

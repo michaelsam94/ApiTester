@@ -1,11 +1,10 @@
-package com.example.apitester.ui
+package com.example.apitester.ui.home
 
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,18 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,8 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -53,19 +44,25 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.apitester.MainActivity
 import com.example.apitester.R
+import com.example.apitester.ui.ViewModelFactory
 import com.example.apitester.utils.HttpMethod
+import com.example.apitester.utils.getFileFromUri
 import com.example.apitester.utils.isInternetAvailable
 import com.example.apitester.utils.isValidJson
 import com.example.apitester.utils.isValidUrl
 import com.example.domain.NetworkResult
+import java.io.File
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel(factory = ViewModelFactory())
+    viewModel: HomeViewModel = viewModel(factory = ViewModelFactory()),
+    activity: MainActivity? = null
 ) {
     val selectedMethod by viewModel.selectedMethod.observeAsState(HttpMethod.GET)
     val selectedSchema by viewModel.selectedSchema.observeAsState("https://")
@@ -75,6 +72,10 @@ fun HomeScreen(
     val headersList = viewModel.headers.observeAsState(SnapshotStateList())
     val paramsList = viewModel.parameters.observeAsState(SnapshotStateList())
     val response = viewModel.response.observeAsState("")
+    val filesList = viewModel.files.observeAsState(SnapshotStateList())
+    var isBodyView by remember { mutableStateOf(true) }
+
+    val fileUris = viewModel.fileUri.observeAsState(emptyList())
 
     val context = LocalContext.current
     var sendEnabled by remember(url) {
@@ -184,15 +185,38 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Body")
+
+                    // Toggle between Body and File Upload views
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "Request Body")
+                        Spacer(modifier = Modifier.weight(1.0f))
+                        Text(text = if (isBodyView) "Switch to File Upload" else "Switch to Body")
+                        IconButton(onClick = { isBodyView = !isBodyView }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_switch),
+                                contentDescription = "Switch View"
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = body,
-                        onValueChange = { value -> viewModel.updateBody(value) },
-                        minLines = 5,
-                        maxLines = 5,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    if (isBodyView) {
+                        OutlinedTextField(
+                            value = body,
+                            onValueChange = { value -> viewModel.updateBody(value) },
+                            minLines = 5,
+                            maxLines = 5,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        FileUploadSection(
+                            homeViewModel = viewModel,
+                            files = filesList.value,
+                            activity = activity
+                        )
+                    }
                 }
                 Button(
                     enabled = sendEnabled,
@@ -203,21 +227,25 @@ fun HomeScreen(
                             return@Button
                         }
 
-                        if (selectedMethod == HttpMethod.POST && !body.isValidJson()) {
+                        if (selectedMethod == HttpMethod.POST && isBodyView && !body.isValidJson()) {
                             Toast.makeText(context, "JSON body not valid", Toast.LENGTH_SHORT)
                                 .show()
                             return@Button
                         }
 
                         viewModel.setLoading(true)
+                        val filesMap: Map<String, File?> = fileUris.value.mapIndexed { index, item ->
+                            "key $index" to context.getFileFromUri(item.toString())
+                        }.toMap()
                         viewModel.makeRequest(
-                            selectedMethod.method,
-                            url,
-                            headersList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
+                            method = selectedMethod.method,
+                            url = url,
+                            headers = headersList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
                                 .toMap(),
-                            paramsList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
+                            parameters = paramsList.value.filter { it.first.isNotEmpty() && it.second.isNotEmpty() }
                                 .toMap(),
-                            body
+                            body = if (isBodyView) body else null,
+                            files = if (!isBodyView) filesMap else null
                         ) { result ->
                             val mainHandler = Handler(Looper.getMainLooper())
                             mainHandler.post {
@@ -266,233 +294,7 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun RequestAdditionalHeaders(
-    homeViewModel: HomeViewModel,
-    title: String,
-    headers: SnapshotStateList<Pair<String, String>>
-) {
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = title)
-        Spacer(modifier = Modifier.weight(1.0f))
-        Icon(
-            painter = painterResource(id = R.drawable.ic_action_delete_circle_outline),
-            contentDescription = "remove header",
-            modifier = Modifier
-                .clickable {
-                    if (headers.size > 0) homeViewModel.removeLastHeader()
-                }
-                .padding(4.dp)
-                .size(21.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Icon(
-            painter = painterResource(id = R.drawable.ic_action_add_circle_outline),
-            contentDescription = "add header",
-            modifier = Modifier
-                .clickable {
-                    homeViewModel.addHeader(Pair("", ""))
-                }
-                .padding(4.dp)
-                .size(24.dp)
-        )
-    }
-    Spacer(modifier = Modifier.height(8.dp))
-    headers.forEachIndexed { index, header ->
-        val valueFocusRequester = remember { FocusRequester() }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = header.first,
-                onValueChange = { key ->
-                    homeViewModel.updateHeader(index, key to header.second)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(valueFocusRequester),
-                placeholder = {
-                    Text(text = "Key")
-                },
-                singleLine = true,
-                maxLines = 1,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = {
-                        valueFocusRequester.requestFocus()
-                    }
-                )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                value = header.second,
-                onValueChange = { value ->
-                    homeViewModel.updateHeader(index, header.first to value)
-                },
-                modifier = Modifier
-                    .weight(2f)
-                    .focusRequester(valueFocusRequester),
-                placeholder = {
-                    Text(text = "Value")
-                },
-                singleLine = true,
-                maxLines = 1,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-    }
-}
 
-@Composable
-fun RequestAdditionalParams(
-    homeViewModel: HomeViewModel,
-    title: String,
-    params: SnapshotStateList<Pair<String, String>>
-) {
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = title)
-        Spacer(modifier = Modifier.weight(1.0f))
-        Icon(
-            painter = painterResource(id = R.drawable.ic_action_delete_circle_outline),
-            contentDescription = "remove header",
-            modifier = Modifier
-                .clickable {
-                    if (params.size > 0) {
-                        homeViewModel.removeLastParameter()
-                    }
-                }
-                .padding(4.dp)
-                .size(21.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Icon(
-            painter = painterResource(id = R.drawable.ic_action_add_circle_outline),
-            contentDescription = "add header",
-            modifier = Modifier
-                .clickable {
-                    homeViewModel.addParameter(Pair("", ""))
-                }
-                .padding(4.dp)
-                .size(24.dp)
-        )
-    }
-    Spacer(modifier = Modifier.height(8.dp))
-    params.forEachIndexed { index, parameter ->
-        val valueFocusRequester = remember { FocusRequester() }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = parameter.first,
-                onValueChange = { key ->
-                    homeViewModel.updateParameter(index, key to parameter.second)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(valueFocusRequester),
-                placeholder = {
-                    Text(text = "Key")
-                },
-                singleLine = true,
-                maxLines = 1,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = {
-                        valueFocusRequester.requestFocus()
-                    }
-                )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                value = parameter.second,
-                onValueChange = { value ->
-                    homeViewModel.updateParameter(index, parameter.first to value)
-                },
-                modifier = Modifier
-                    .weight(2f)
-                    .focusRequester(valueFocusRequester),
-                placeholder = {
-                    Text(text = "Value")
-                },
-                singleLine = true,
-                maxLines = 1,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-    }
-}
 
-@Composable
-fun RequestMethodDropDownMenu(selectedItem: HttpMethod, onSelect: (HttpMethod) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Text(
-            text = selectedItem.method, modifier = Modifier
-                .padding(vertical = 8.dp)
-                .clickable {
-                    expanded = true
-                }, color = Color(0xffF59F3F)
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            HttpMethod.allMethods.forEach { method ->
-                DropdownMenuItem(text = { Text(text = method.method) }, onClick = {
-                    expanded = false
-                    onSelect.invoke(method)
-                })
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RequestSchemaDropDownMenu(selectedItem: String, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val schemas = listOf("http://", "https://")
-
-    Box {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp)
-        ) {
-            Text(
-                text = selectedItem, modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .padding(end = 8.dp)
-                    .clickable {
-                        expanded = true
-                    })
-            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            schemas.forEach {
-                DropdownMenuItem(text = { Text(text = it) }, onClick = {
-                    expanded = false
-                    onSelect.invoke(it)
-                })
-            }
-        }
-    }
-}
 
 

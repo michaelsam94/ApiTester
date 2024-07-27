@@ -3,6 +3,7 @@ package com.example.apitester.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.apitester.di.ServiceLocator
+import com.example.apitester.ui.home.HomeViewModel
 
 class ViewModelFactory() : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

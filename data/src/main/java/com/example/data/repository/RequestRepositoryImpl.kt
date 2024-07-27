@@ -5,6 +5,7 @@ import com.example.data.HttpResult
 import com.example.data.dao.HttpResponseDao
 import com.example.data.dto.HttpResponseDto
 import com.example.data.local.entity.HttpResponseEntity
+import java.io.File
 
 class RequestRepositoryImpl(private val apiService: ApiService, private val dao: HttpResponseDao) :
 
@@ -15,9 +16,10 @@ class RequestRepositoryImpl(private val apiService: ApiService, private val dao:
         headers: Map<String, String>,
         parameters: Map<String, String>,
         body: String?,
+        files: Map<String, File?>?,
         onResponse: (HttpResult) -> Unit
     ) {
-        apiService.makeRequest(method, url, headers, parameters, body, onResponse)
+        apiService.makeRequest(method, url, headers, parameters, body,files, onResponse)
     }
 
     override fun saveResponse(httpResponse: HttpResponseDto) {

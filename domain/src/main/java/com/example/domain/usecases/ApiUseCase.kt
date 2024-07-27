@@ -4,6 +4,7 @@ import com.example.data.HttpResult
 import com.example.data.HttpStatus
 import com.example.data.repository.RequestRepository
 import com.example.domain.NetworkResult
+import java.io.File
 
 class ApiUseCase(private val repository: RequestRepository) {
     fun execute(
@@ -12,10 +13,11 @@ class ApiUseCase(private val repository: RequestRepository) {
         headers: Map<String, String>,
         parameters: Map<String, String>,
         body: String?,
+        files: Map<String, File?>?,
         onResponse: (NetworkResult)  -> Unit
     ) {
         try {
-            repository.sendRequest(method, url, headers, parameters, body) { httpResult ->
+            repository.sendRequest(method, url, headers, parameters, body,files) { httpResult ->
 
                 when(httpResult){
                     is HttpResult.Success -> {
