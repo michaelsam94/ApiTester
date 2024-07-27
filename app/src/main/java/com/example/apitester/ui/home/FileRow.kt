@@ -1,6 +1,7 @@
 package com.example.apitester.ui.home
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +40,7 @@ fun FileRow(
     var expanded by remember { mutableStateOf(false) }
     var selectedMimeType by remember { mutableStateOf(fileData.mimeType.toMimeType()) }
     val fileNames = homeViewModel.fileNames.observeAsState(emptyList<String>())
+    val fileUris = homeViewModel.fileUri.observeAsState(emptyList())
 
     Row(
         verticalAlignment = Alignment.CenterVertically
@@ -52,7 +53,10 @@ fun FileRow(
             }
             activity?.pickFile(index, selectedMimeType.type)
         }) {
-            Icon(painter = painterResource(id = R.drawable.ic_attach), contentDescription = "attach file")
+            Icon(
+                painter = painterResource(id = R.drawable.ic_attach),
+                contentDescription = "attach file"
+            )
         }
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -61,7 +65,19 @@ fun FileRow(
             text = fileNames.value[index], // Display the selected file name
             modifier = Modifier
                 .padding(horizontal = 8.dp)
-                .weight(4.0f),
+                .weight(4.0f)
+                .clickable {
+                    // Check if the selected file name is not empty and does not have a default value
+                    if (fileNames.value[index].isNotEmpty() && fileNames.value[index] != "Select File...") {
+                        // Create an intent to open the file
+                        val fileUri = Uri.parse(fileUris.value[index].toString())
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(fileUri, selectedMimeType.type)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }
+                        activity?.startActivity(intent)
+                    }
+                },
             color = Color.Gray
         )
 

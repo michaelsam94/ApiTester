@@ -20,7 +20,7 @@ class HomeViewModel(private val apiUseCase: ApiUseCase) : ViewModel() {
     private val _selectedSchema = MutableLiveData("https://")
     val selectedSchema: LiveData<String> = _selectedSchema
 
-    private val _url = MutableLiveData("dummyjson.com/products/")
+    private val _url = MutableLiveData("")
     val url: LiveData<String> = _url
 
     private val _body = MutableLiveData("")
