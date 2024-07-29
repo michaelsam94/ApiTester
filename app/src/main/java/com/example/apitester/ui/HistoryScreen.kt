@@ -302,7 +302,7 @@ fun HistoryScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {  viewModel.showFilterTypeDialog(false)}) {
+                TextButton(onClick = {  viewModel.showFilterStatusDialog(false)}) {
                     Text("Cancel")
                 }
             }

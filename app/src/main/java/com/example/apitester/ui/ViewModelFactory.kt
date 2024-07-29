@@ -13,7 +13,7 @@ class ViewModelFactory() : ViewModelProvider.Factory {
             return ResponseViewModel(ServiceLocator.getSaveResponseUseCase()) as T
         } else if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {
             return HistoryViewModel(
-                ServiceLocator.getResponseUseCase(),
+                ServiceLocator.getResponsesUseCase(),
                 ServiceLocator.getSortResponsesUseCase(),
                 ServiceLocator.getFilterResponsesUseCase()
             ) as T

@@ -7,76 +7,64 @@ import com.example.data.local.AppDatabase
 import com.example.data.remote.ApiServiceImp
 import com.example.data.repository.RequestRepository
 import com.example.data.repository.RequestRepositoryImpl
-import com.example.domain.usecases.ApiUseCase
-import com.example.domain.usecases.FilterResponsesUseCase
-import com.example.domain.usecases.GetResponsesUseCase
-import com.example.domain.usecases.SaveResponseUseCase
-import com.example.domain.usecases.SortResponsesUseCase
-
+import com.example.domain.usecases.*
 
 object ServiceLocator {
 
+    // Instance variables
     private var apiService: ApiService = ApiServiceImp()
-
     private var database: AppDatabase? = null
 
     @Volatile
-    var requestRepository: RequestRepository? = null
+    private var requestRepository: RequestRepository? = null
 
+    // Use cases
     private lateinit var apiUseCase: ApiUseCase
     private lateinit var saveResponseUseCase: SaveResponseUseCase
-    private lateinit var getResponseUseCase: GetResponsesUseCase
+    private lateinit var getResponsesUseCase: GetResponsesUseCase
     private lateinit var filterResponsesUseCase: FilterResponsesUseCase
     private lateinit var sortResponsesUseCase: SortResponsesUseCase
 
-
+    // Initialize database and use cases
     fun initDB(context: Context) {
         synchronized(this) {
-            requestRepository = requestRepository ?: createRequestRepository(context)
-            requestRepository.let {
-                apiUseCase = ApiUseCase(requestRepository!!)
-                saveResponseUseCase = SaveResponseUseCase(requestRepository!!)
-                getResponseUseCase = GetResponsesUseCase(requestRepository!!)
-                filterResponsesUseCase = FilterResponsesUseCase(requestRepository!!)
-                sortResponsesUseCase = SortResponsesUseCase(requestRepository!!)
+            if (requestRepository == null) {
+                requestRepository = createRequestRepository(context)
             }
 
+            requestRepository?.let {
+                apiUseCase = ApiUseCase(it)
+                saveResponseUseCase = SaveResponseUseCase(it)
+                getResponsesUseCase = GetResponsesUseCase(it)
+                filterResponsesUseCase = FilterResponsesUseCase(it)
+                sortResponsesUseCase = SortResponsesUseCase(it)
+            }
         }
     }
 
+    // Create Request Repository
     private fun createRequestRepository(context: Context): RequestRepository {
-        val database = database ?: createDatabase(context)
-        val repository = RequestRepositoryImpl(apiService, HttpResponseDao(database))
-        requestRepository = repository
-        return repository
+        val db = database ?: createDatabase(context)
+        return RequestRepositoryImpl(apiService, HttpResponseDao(db)).also {
+            requestRepository = it
+        }
     }
 
+    // Create Database
     private fun createDatabase(context: Context): AppDatabase {
-        val result = AppDatabase.getDatabase(context)
-        database = result
-        return result
+        return AppDatabase.getDatabase(context).also {
+            database = it
+        }
     }
 
+    // Getters for use cases
+    fun getApiUseCase(): ApiUseCase = apiUseCase
 
-    fun getApiUseCase(): ApiUseCase {
-        return apiUseCase
-    }
+    fun getSaveResponseUseCase(): SaveResponseUseCase = saveResponseUseCase
 
-    fun getSaveResponseUseCase(): SaveResponseUseCase {
-        return saveResponseUseCase
-    }
+    fun getResponsesUseCase(): GetResponsesUseCase = getResponsesUseCase
 
-    fun getResponseUseCase(): GetResponsesUseCase {
-        return getResponseUseCase
-    }
+    fun getFilterResponsesUseCase(): FilterResponsesUseCase = filterResponsesUseCase
 
-    fun getFilterResponsesUseCase(): FilterResponsesUseCase {
-        return filterResponsesUseCase
-    }
-
-    fun getSortResponsesUseCase(): SortResponsesUseCase {
-        return sortResponsesUseCase
-    }
-
-
+    fun getSortResponsesUseCase(): SortResponsesUseCase = sortResponsesUseCase
 }
