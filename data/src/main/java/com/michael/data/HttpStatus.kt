@@ -1,0 +1,82 @@
+package com.michael.data
+
+sealed class HttpStatus(val code: Int, val message: String) {
+    data class Success(val statusCode: Int, val statusMessage: String) : HttpStatus(statusCode, statusMessage)
+    data class Redirection(val statusCode: Int, val statusMessage: String) : HttpStatus(statusCode, statusMessage)
+    data class ClientError(val statusCode: Int, val statusMessage: String) : HttpStatus(statusCode, statusMessage)
+    data class ServerError(val statusCode: Int, val statusMessage: String) : HttpStatus(statusCode, statusMessage)
+
+    companion object {
+        fun fromCode(code: Int): HttpStatus? {
+            return when (code) {
+                200 -> Success(200, "OK")
+                201 -> Success(201, "Created")
+                202 -> Success(202, "Accepted")
+                203 -> Success(203, "Non-Authoritative Information")
+                204 -> Success(204, "No Content")
+                205 -> Success(205, "Reset Content")
+                206 -> Success(206, "Partial Content")
+                207 -> Success(207, "Multi-Status")
+                208 -> Success(208, "Already Reported")
+                226 -> Success(226, "IM Used")
+
+                300 -> Redirection(300, "Multiple Choices")
+                301 -> Redirection(301, "Moved Permanently")
+                302 -> Redirection(302, "Found")
+                303 -> Redirection(303, "See Other")
+                304 -> Redirection(304, "Not Modified")
+                305 -> Redirection(305, "Use Proxy")
+                307 -> Redirection(307, "Temporary Redirect")
+                308 -> Redirection(308, "Permanent Redirect")
+
+                400 -> ClientError(400, "Bad Request")
+                401 -> ClientError(401, "Unauthorized")
+                402 -> ClientError(402, "Payment Required")
+                403 -> ClientError(403, "Forbidden")
+                404 -> ClientError(404, "Not Found")
+                405 -> ClientError(405, "Method Not Allowed")
+                406 -> ClientError(406, "Not Acceptable")
+                407 -> ClientError(407, "Proxy Authentication Required")
+                408 -> ClientError(408, "Request Timeout")
+                409 -> ClientError(409, "Conflict")
+                410 -> ClientError(410, "Gone")
+                411 -> ClientError(411, "Length Required")
+                412 -> ClientError(412, "Precondition Failed")
+                413 -> ClientError(413, "Request Entity Too Large")
+                414 -> ClientError(414, "Request-URI Too Long")
+                415 -> ClientError(415, "Unsupported Media Type")
+                416 -> ClientError(416, "Requested Range Not Satisfiable")
+                417 -> ClientError(417, "Expectation Failed")
+                418 -> ClientError(418, "I'm a teapot")
+                420 -> ClientError(420, "Enhance Your Calm")
+                422 -> ClientError(422, "Unprocessable Entity")
+                423 -> ClientError(423, "Locked")
+                424 -> ClientError(424, "Failed Dependency")
+                426 -> ClientError(426, "Upgrade Required")
+                428 -> ClientError(428, "Precondition Required")
+                429 -> ClientError(429, "Too Many Requests")
+                431 -> ClientError(431, "Request Header Fields Too Large")
+                444 -> ClientError(444, "No Response")
+                449 -> ClientError(449, "Retry With")
+                450 -> ClientError(450, "Blocked by Windows Parental Controls")
+                451 -> ClientError(451, "Unavailable For Legal Reasons")
+                499 -> ClientError(499, "Client Closed Request")
+
+                500 -> ServerError(500, "Internal Server Error")
+                501 -> ServerError(501, "Not Implemented")
+                502 -> ServerError(502, "Bad Gateway")
+                503 -> ServerError(503, "Service Unavailable")
+                504 -> ServerError(504, "Gateway Timeout")
+                505 -> ServerError(505, "HTTP Version Not Supported")
+                506 -> ServerError(506, "Variant Also Negotiates")
+                507 -> ServerError(507, "Insufficient Storage")
+                508 -> ServerError(508, "Loop Detected")
+                510 -> ServerError(510, "Not Extended")
+                511 -> ServerError(511, "Network Authentication Required")
+                598 -> ServerError(598, "Network Read Timeout Error")
+                599 -> ServerError(599, "Network Connect Timeout Error")
+                else -> null
+            }
+        }
+    }
+}
